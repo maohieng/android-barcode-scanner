@@ -7,11 +7,18 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.camera.core.Camera;
+import androidx.camera.core.CameraSelector;
 import androidx.camera.core.ImageAnalysis;
+import androidx.camera.core.ImageCapture;
 import androidx.camera.core.ImageProxy;
+import androidx.camera.core.Preview;
+import androidx.camera.extensions.BokehPreviewExtender;
 import androidx.camera.lifecycle.ProcessCameraProvider;
+import androidx.camera.view.PreviewView;
 import androidx.core.content.ContextCompat;
 import androidx.lifecycle.AndroidViewModel;
+import androidx.lifecycle.LifecycleOwner;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
@@ -28,6 +35,8 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class BarcodeScannerViewModel extends AndroidViewModel {
 
@@ -58,6 +67,7 @@ public class BarcodeScannerViewModel extends AndroidViewModel {
         REQUIRED_PERMISSIONS.add(Manifest.permission.CAMERA);
     }
 
+    private final ExecutorService analyzeExecutor;
     private final BarcodeScanner barcodeScanner;
     private final BarcodeImageAnalyzer imageAnalyzer;
 
@@ -67,6 +77,7 @@ public class BarcodeScannerViewModel extends AndroidViewModel {
 
     public BarcodeScannerViewModel(@NonNull Application application, @Nullable int[] formats) {
         super(application);
+        analyzeExecutor = Executors.newSingleThreadExecutor();
         imageAnalyzer = this.new BarcodeImageAnalyzer();
 
         if (formats == null || formats.length == 0) {
@@ -93,6 +104,12 @@ public class BarcodeScannerViewModel extends AndroidViewModel {
         } else {
             permissionGrantingObservable.setValue(false);
         }
+    }
+
+    @Override
+    protected void onCleared() {
+        analyzeExecutor.shutdown();
+        super.onCleared();
     }
 
     public void onRequestCameraPermission(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
@@ -127,6 +144,62 @@ public class BarcodeScannerViewModel extends AndroidViewModel {
                 Log.e(TAG, "Error getting ProcessCameraProvider", e);
             }
         }, ContextCompat.getMainExecutor(getApplication()));
+    }
+
+    public Camera bindCameraProviderToLifecycle(ProcessCameraProvider processCameraProvider,
+                                                LifecycleOwner owner,
+                                                PreviewView previewView,
+                                                int aspectRatio,
+                                                int rotation) {
+        CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
+
+        final ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
+                .setTargetAspectRatio(aspectRatio)
+                .setTargetRotation(rotation)
+                .setImageQueueDepth(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                .build();
+        imageAnalysis.setAnalyzer(analyzeExecutor, imageAnalyzer);
+
+        Preview.Builder previewBuilder = setupPreviewBuilder(previewView, aspectRatio, rotation);
+
+//        setBokehEffect(previewBuilder, cameraSelector);
+
+        Preview preview = previewBuilder.build();
+        preview.setSurfaceProvider(previewView.getSurfaceProvider());
+
+        ImageCapture imageCapture = setupImageCapture();
+
+        return processCameraProvider.bindToLifecycle(
+                owner,
+                cameraSelector,
+                preview,
+                imageCapture,
+                imageAnalysis
+        );
+    }
+
+    private Preview.Builder setupPreviewBuilder(PreviewView previewView,
+                                                int aspectRatio,
+                                                int rotation) {
+        return new Preview.Builder()
+                .setTargetAspectRatio(aspectRatio)
+                .setTargetRotation(rotation);
+    }
+
+    private ImageCapture setupImageCapture() {
+        return new ImageCapture.Builder()
+                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                .build();
+    }
+
+    private void setBokehEffect(
+            Preview.Builder previewBuilder,
+            CameraSelector cameraSelector
+    ) {
+        BokehPreviewExtender bokehPreviewExtender = BokehPreviewExtender.create(previewBuilder);
+        if (bokehPreviewExtender.isExtensionAvailable(cameraSelector)) {
+            bokehPreviewExtender.enableExtension(cameraSelector);
+        }
     }
 
     public BarcodeImageAnalyzer getImageAnalyzer() {

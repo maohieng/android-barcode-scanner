@@ -17,6 +17,7 @@ import github.jomutils.android.barcode.R;
 public class FirstFragment extends Fragment {
 
     private TextView textContent;
+    private TextView textValue;
 
     private MainViewModel mainViewModel;
 
@@ -32,6 +33,7 @@ public class FirstFragment extends Fragment {
     public void onViewCreated(@NonNull View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         textContent = view.findViewById(R.id.textview_first);
+        textValue = view.findViewById(R.id.textValue);
         view.findViewById(R.id.button_first).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -43,6 +45,7 @@ public class FirstFragment extends Fragment {
         mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
         mainViewModel.getBarcodeResultObservable().observe(getViewLifecycleOwner(), barcodeResult -> {
             if (barcodeResult != null) {
+                textValue.setText(barcodeResult.displayValue);
                 textContent.setText(barcodeResult.toString());
             }
         });

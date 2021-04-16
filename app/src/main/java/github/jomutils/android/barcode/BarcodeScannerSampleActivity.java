@@ -12,9 +12,6 @@ import android.util.DisplayMetrics;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.camera.core.CameraSelector;
-import androidx.camera.core.ImageAnalysis;
-import androidx.camera.core.Preview;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
@@ -22,9 +19,6 @@ import androidx.fragment.app.Fragment;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.google.mlkit.vision.barcode.Barcode;
-
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import static github.jomutils.android.barcode.BarcodeScannerViewModel.REQUEST_CODE_PERMISSIONS;
 import static github.jomutils.android.barcode.BarcodeScannerViewModel.REQUIRED_PERMISSIONS;
@@ -59,7 +53,6 @@ public class BarcodeScannerSampleActivity extends AppCompatActivity {
         fragment.startActivityForResult(starter, requestCode);
     }
 
-    private ExecutorService cameraExecutor;
     private PreviewView previewView;
 
     BarcodeScannerViewModel viewModel;
@@ -68,8 +61,6 @@ public class BarcodeScannerSampleActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_scanner);
-
-        cameraExecutor = Executors.newSingleThreadExecutor();
 
         previewView = findViewById(R.id.viewFinder);
 
@@ -108,12 +99,6 @@ public class BarcodeScannerSampleActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onDestroy() {
-        cameraExecutor.shutdown();
-        super.onDestroy();
-    }
-
-    @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         viewModel.onRequestCameraPermission(requestCode, permissions, grantResults);
@@ -132,33 +117,11 @@ public class BarcodeScannerSampleActivity extends AppCompatActivity {
 
         final int rotation = previewView.getDisplay().getRotation();
 
-        final Preview preview = new Preview.Builder()
-                .setTargetAspectRatio(aspectRatio)
-                .setTargetRotation(rotation)
-                .build();
-
-        preview.setSurfaceProvider(previewView.getSurfaceProvider());
-
-        CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
-
-        final ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
-                .setTargetAspectRatio(aspectRatio)
-                .setTargetRotation(rotation)
-                .setImageQueueDepth(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .build();
-        imageAnalysis.setAnalyzer(cameraExecutor, viewModel.getImageAnalyzer());
-
-        // Unbind use cases before rebinding
-        cameraProvider.unbindAll();
-
-        // Bind use cases to camera
-        /*final Camera camera = */
-        cameraProvider.bindToLifecycle(
-                BarcodeScannerSampleActivity.this,
-                cameraSelector,
-                preview,
-                imageAnalysis
-        );
+        viewModel.bindCameraProviderToLifecycle(cameraProvider,
+                this,
+                previewView,
+                aspectRatio,
+                rotation);
     }
 
     ///////////////////////////////////////////////////////////////////////////
