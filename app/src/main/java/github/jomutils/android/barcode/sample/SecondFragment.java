@@ -1,4 +1,4 @@
-package github.jomutils.android.barcode;
+package github.jomutils.android.barcode.sample;
 
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -8,6 +8,8 @@ import android.view.ViewGroup;
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
 import androidx.navigation.fragment.NavHostFragment;
+
+import github.jomutils.android.barcode.R;
 
 
 public class SecondFragment extends Fragment {

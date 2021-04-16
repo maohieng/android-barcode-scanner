@@ -1,4 +1,4 @@
-package github.jomutils.android.barcode;
+package github.jomutils.android.barcode.sample;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -13,7 +13,9 @@ import androidx.navigation.fragment.NavHostFragment;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import java.util.ArrayList;
+import github.jomutils.android.barcode.BarCodeScannerActivity;
+import github.jomutils.android.barcode.BarcodeScannerViewModel;
+import github.jomutils.android.barcode.R;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -69,22 +71,15 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == REQUEST_CODE_START_SCANNER) {
             if (resultCode == RESULT_OK) {
                 if (data != null) {
-                    final ArrayList<BarCodeScannerActivity.BarcodeResult> barcodeResults =
-                            data.getParcelableArrayListExtra(BarCodeScannerActivity.EXTRA_BARCODE_RESULTS);
+                    BarcodeScannerViewModel.BarcodeResult barcodeResult = data.getParcelableExtra(BarCodeScannerActivity.EXTRA_BARCODE_RESULT);
 
-                    if (barcodeResults != null) {
-                        StringBuilder builder = new StringBuilder();
-
-                        for (BarCodeScannerActivity.BarcodeResult barcodeResult : barcodeResults) {
-                            builder.append(barcodeResult.toString()).append("\n");
-                        }
-
+                    if (barcodeResult != null) {
                         final FirstFragment firstFragment = (FirstFragment) navHostFragment
                                 .getChildFragmentManager()
                                 .getFragments()
                                 .get(0);
 
-                        firstFragment.updateContent(builder.toString());
+                        firstFragment.updateContent(barcodeResult.toString());
                     }
                 }
             }
