@@ -8,6 +8,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
 
 import github.jomutils.android.barcode.R;
@@ -16,6 +17,8 @@ import github.jomutils.android.barcode.R;
 public class FirstFragment extends Fragment {
 
     private TextView textContent;
+
+    private MainViewModel mainViewModel;
 
     @Override
     public View onCreateView(
@@ -36,11 +39,12 @@ public class FirstFragment extends Fragment {
                         .navigate(R.id.action_FirstFragment_to_SecondFragment);
             }
         });
-    }
 
-    void updateContent(String content) {
-        if (textContent != null && isAdded()) {
-            textContent.setText(content);
-        }
+        mainViewModel = new ViewModelProvider(requireActivity()).get(MainViewModel.class);
+        mainViewModel.getBarcodeResultObservable().observe(getViewLifecycleOwner(), barcodeResult -> {
+            if (barcodeResult != null) {
+                textContent.setText(barcodeResult.toString());
+            }
+        });
     }
 }

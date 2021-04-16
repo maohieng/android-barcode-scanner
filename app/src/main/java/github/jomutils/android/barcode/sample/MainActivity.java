@@ -9,13 +9,16 @@ import android.view.View;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.navigation.fragment.NavHostFragment;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
-import github.jomutils.android.barcode.BarCodeScannerActivity;
-import github.jomutils.android.barcode.BarcodeScannerViewModel;
+import github.jomutils.android.barcode.BarcodeResult;
+import github.jomutils.android.barcode.BarcodeScannerSampleActivity;
 import github.jomutils.android.barcode.R;
+
+import static github.jomutils.android.barcode.Constants.EXTRA_BARCODE_RESULT;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -24,6 +27,8 @@ public class MainActivity extends AppCompatActivity {
     public static final int REQUEST_CODE_START_SCANNER = 11;
 
     private NavHostFragment navHostFragment;
+
+    private MainViewModel mainViewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +46,8 @@ public class MainActivity extends AppCompatActivity {
         });
 
         navHostFragment = (NavHostFragment) getSupportFragmentManager().findFragmentById(R.id.nav_host_fragment);
+
+        mainViewModel = new ViewModelProvider(this).get(MainViewModel.class);
     }
 
     @Override
@@ -71,23 +78,24 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == REQUEST_CODE_START_SCANNER) {
             if (resultCode == RESULT_OK) {
                 if (data != null) {
-                    BarcodeScannerViewModel.BarcodeResult barcodeResult = data.getParcelableExtra(BarCodeScannerActivity.EXTRA_BARCODE_RESULT);
+                    BarcodeResult barcodeResult = data.getParcelableExtra(EXTRA_BARCODE_RESULT);
+                    mainViewModel.setBarcodeResult(barcodeResult);
+//                    if (barcodeResult != null) {
 
-                    if (barcodeResult != null) {
-                        final FirstFragment firstFragment = (FirstFragment) navHostFragment
-                                .getChildFragmentManager()
-                                .getFragments()
-                                .get(0);
-
-                        firstFragment.updateContent(barcodeResult.toString());
-                    }
+//                        final FirstFragment firstFragment = (FirstFragment) navHostFragment
+//                                .getChildFragmentManager()
+//                                .getFragments()
+//                                .get(0);
+//
+//                        firstFragment.updateContent(barcodeResult.toString());
+//                    }
                 }
             }
         }
     }
 
     private void startScanning() {
-        Intent intent = new Intent(this, BarCodeScannerActivity.class);
-        startActivityForResult(intent, REQUEST_CODE_START_SCANNER);
+        BarcodeScannerSampleActivity.startForResult(this, null, REQUEST_CODE_START_SCANNER);
+//        BarCodeScannerActivity.startForResult(this, null, REQUEST_CODE_START_SCANNER);
     }
 }

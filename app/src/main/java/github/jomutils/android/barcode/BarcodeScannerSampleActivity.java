@@ -3,8 +3,11 @@ package github.jomutils.android.barcode;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
+import android.os.VibrationEffect;
+import android.os.Vibrator;
+import android.util.DisplayMetrics;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -28,20 +31,20 @@ import static github.jomutils.android.barcode.BarcodeScannerViewModel.REQUIRED_P
 import static github.jomutils.android.barcode.Constants.EXTRA_BARCODE_FORMATS;
 import static github.jomutils.android.barcode.Constants.EXTRA_BARCODE_RESULT;
 
-public class BarCodeScannerActivity extends AppCompatActivity {
+public class BarcodeScannerSampleActivity extends AppCompatActivity {
 
     private static final String TAG = "CameraXBasic";
 
 
     /**
-     * Creates a starter intent of {@link BarCodeScannerActivity} with extra barcode formats.
+     * Creates a starter intent of {@link BarcodeScannerSampleActivity} with extra barcode formats.
      *
      * @param context
      * @param formats an array of {@link Barcode}'s Formats. {@code null} for all formats support.
      * @return
      */
     public static Intent starter(Context context, int[] formats) {
-        Intent starter = new Intent(context, BarCodeScannerActivity.class);
+        Intent starter = new Intent(context, BarcodeScannerSampleActivity.class);
         starter.putExtra(EXTRA_BARCODE_FORMATS, formats);
         return starter;
     }
@@ -57,7 +60,7 @@ public class BarCodeScannerActivity extends AppCompatActivity {
     }
 
     private ExecutorService cameraExecutor;
-    private PreviewView viewFinder;
+    private PreviewView previewView;
 
     BarcodeScannerViewModel viewModel;
 
@@ -68,7 +71,7 @@ public class BarCodeScannerActivity extends AppCompatActivity {
 
         cameraExecutor = Executors.newSingleThreadExecutor();
 
-        viewFinder = findViewById(R.id.viewFinder);
+        previewView = findViewById(R.id.viewFinder);
 
         final int[] formats = getIntent().getIntArrayExtra(EXTRA_BARCODE_FORMATS);
         BarcodeScannerViewModel.Factory factory = new BarcodeScannerViewModel.Factory(getApplication(), formats);
@@ -76,6 +79,15 @@ public class BarCodeScannerActivity extends AppCompatActivity {
 
         viewModel.getBarcodeResultObservable().observe(this, barcodeResult -> {
             if (barcodeResult != null) {
+                // Vibrate
+                Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+                if (Build.VERSION.SDK_INT >= 26) {
+                    vibrator.vibrate(VibrationEffect.createOneShot(250, VibrationEffect.DEFAULT_AMPLITUDE));
+                } else {
+                    vibrator.vibrate(250);
+                }
+
+                // Finish with result
                 Intent data = new Intent();
                 data.putExtra(EXTRA_BARCODE_RESULT, barcodeResult);
                 setResult(RESULT_OK, data);
@@ -112,30 +124,41 @@ public class BarCodeScannerActivity extends AppCompatActivity {
     }
 
     private void startCamera(@NonNull ProcessCameraProvider cameraProvider) {
-        final Preview preview = new Preview.Builder().build();
-        preview.setSurfaceProvider(viewFinder.getSurfaceProvider());
+        // Create a Preview
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        previewView.getDisplay().getRealMetrics(displayMetrics);
+
+        final int aspectRatio = CameraHelper.getAspectRatio(displayMetrics.widthPixels, displayMetrics.heightPixels);
+
+        final int rotation = previewView.getDisplay().getRotation();
+
+        final Preview preview = new Preview.Builder()
+                .setTargetAspectRatio(aspectRatio)
+                .setTargetRotation(rotation)
+                .build();
+
+        preview.setSurfaceProvider(previewView.getSurfaceProvider());
 
         CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
 
         final ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                .setTargetAspectRatio(aspectRatio)
+                .setTargetRotation(rotation)
+                .setImageQueueDepth(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                 .build();
         imageAnalysis.setAnalyzer(cameraExecutor, viewModel.getImageAnalyzer());
 
-        try {
-            // Unbind use cases before rebinding
-            cameraProvider.unbindAll();
+        // Unbind use cases before rebinding
+        cameraProvider.unbindAll();
 
-            // Bind use cases to camera
-            /*camera = */
-            cameraProvider.bindToLifecycle(BarCodeScannerActivity.this,
-                    cameraSelector,
-                    preview,
-                    imageAnalysis);
-
-        } catch (Exception exc) {
-            Log.e(TAG, "Use case binding failed", exc);
-        }
+        // Bind use cases to camera
+        /*final Camera camera = */
+        cameraProvider.bindToLifecycle(
+                BarcodeScannerSampleActivity.this,
+                cameraSelector,
+                preview,
+                imageAnalysis
+        );
     }
 
     ///////////////////////////////////////////////////////////////////////////
