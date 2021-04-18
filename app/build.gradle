@@ -56,7 +56,7 @@ dependencies {
     // CameraX View class
     implementation "androidx.camera:camera-view:1.0.0-alpha23"
     // CameraX Extension
-    implementation "androidx.camera:camera-extensions:1.0.0-alpha23"
+//    implementation "androidx.camera:camera-extensions:1.0.0-alpha23"
 
 
 }

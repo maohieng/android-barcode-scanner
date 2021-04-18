@@ -1,4 +1,4 @@
-package github.jomutils.android.barcode;
+package github.jomutils.android.barcode.sample;
 
 public final class Constants {
 

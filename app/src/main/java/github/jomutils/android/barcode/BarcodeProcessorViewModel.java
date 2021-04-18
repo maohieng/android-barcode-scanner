@@ -24,6 +24,7 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 
+import com.google.android.gms.tasks.TaskExecutors;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.mlkit.vision.barcode.Barcode;
 import com.google.mlkit.vision.barcode.BarcodeScanner;
@@ -38,7 +39,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class BarcodeScannerViewModel extends AndroidViewModel {
+public class BarcodeProcessorViewModel extends AndroidViewModel {
 
     public static class Factory extends ViewModelProvider.NewInstanceFactory {
         private final Application application;
@@ -53,8 +54,19 @@ public class BarcodeScannerViewModel extends AndroidViewModel {
         @NonNull
         @Override
         public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
-            return (T) new BarcodeScannerViewModel(application, formats);
+            return (T) new BarcodeProcessorViewModel(application, formats);
         }
+    }
+
+
+    public enum WorkflowState {
+        NOT_STARTED,
+        DETECTING,
+        DETECTED,
+        CONFIRMING,
+        CONFIRMED,
+        PROCESSING,
+        PROCEED
     }
 
     private static final String TAG = "BarcodeScannerViewModel";
@@ -68,16 +80,22 @@ public class BarcodeScannerViewModel extends AndroidViewModel {
     }
 
     private final ExecutorService analyzeExecutor;
+    private final ScopedExecutor mainScopeExecutor;
+
     private final BarcodeScanner barcodeScanner;
     private final BarcodeImageAnalyzer imageAnalyzer;
 
+    private final MutableLiveData<WorkflowState> workflowState = new MutableLiveData<>(WorkflowState.NOT_STARTED);
+
     private final MutableLiveData<Boolean> permissionGrantingObservable = new MutableLiveData<>();
     private final MutableLiveData<ProcessCameraProvider> processCameraProvider = new MutableLiveData<>();
-    private final MutableLiveData<BarcodeResult> barcodeResultObservable = new MutableLiveData<>();
+    private final MutableLiveData<List<Barcode>> allBarcodesObservable = new MutableLiveData<>();
+    private final MutableLiveData<BarcodeResult> detectedBarcode = new MutableLiveData<>();
 
-    public BarcodeScannerViewModel(@NonNull Application application, @Nullable int[] formats) {
+    public BarcodeProcessorViewModel(@NonNull Application application, @Nullable int[] formats) {
         super(application);
         analyzeExecutor = Executors.newSingleThreadExecutor();
+        mainScopeExecutor = new ScopedExecutor(TaskExecutors.MAIN_THREAD);
         imageAnalyzer = this.new BarcodeImageAnalyzer();
 
         if (formats == null || formats.length == 0) {
@@ -109,6 +127,7 @@ public class BarcodeScannerViewModel extends AndroidViewModel {
     @Override
     protected void onCleared() {
         analyzeExecutor.shutdown();
+        mainScopeExecutor.shutdown();
         barcodeScanner.close();
         super.onCleared();
     }
@@ -140,7 +159,7 @@ public class BarcodeScannerViewModel extends AndroidViewModel {
         cameraProviderFuture.addListener(() -> {
             try {
                 final ProcessCameraProvider processCameraProvider = cameraProviderFuture.get();
-                BarcodeScannerViewModel.this.processCameraProvider.setValue(processCameraProvider);
+                BarcodeProcessorViewModel.this.processCameraProvider.setValue(processCameraProvider);
             } catch (ExecutionException | InterruptedException e) {
                 Log.e(TAG, "Error getting ProcessCameraProvider", e);
             }
@@ -150,6 +169,8 @@ public class BarcodeScannerViewModel extends AndroidViewModel {
     public Camera startCamera(ProcessCameraProvider processCameraProvider,
                               LifecycleOwner owner,
                               PreviewView previewView) {
+        workflowState.setValue(WorkflowState.DETECTING);
+
         // Create a Preview
         DisplayMetrics displayMetrics = new DisplayMetrics();
         previewView.getDisplay().getRealMetrics(displayMetrics);
@@ -201,15 +222,20 @@ public class BarcodeScannerViewModel extends AndroidViewModel {
                 .build();
     }
 
-//    private void setBokehEffect(
-//            Preview.Builder previewBuilder,
-//            CameraSelector cameraSelector
-//    ) {
-//        BokehPreviewExtender bokehPreviewExtender = BokehPreviewExtender.create(previewBuilder);
-//        if (bokehPreviewExtender.isExtensionAvailable(cameraSelector)) {
-//            bokehPreviewExtender.enableExtension(cameraSelector);
-//        }
-//    }
+    public void setWorkflowState(WorkflowState state) {
+        final WorkflowState value = workflowState.getValue();
+        if (value == null || value != state) {
+            workflowState.setValue(state);
+        }
+    }
+
+    public void setDetectedBarcode(Barcode barcode) {
+        final BarcodeResult barcodeResult = BarcodeResult.fromBarcode(barcode);
+        final BarcodeResult value = detectedBarcode.getValue();
+        if (value == null || !value.equals(barcodeResult)) {
+            detectedBarcode.setValue(barcodeResult);
+        }
+    }
 
     public BarcodeImageAnalyzer getImageAnalyzer() {
         return imageAnalyzer;
@@ -223,8 +249,16 @@ public class BarcodeScannerViewModel extends AndroidViewModel {
         return processCameraProvider;
     }
 
-    public LiveData<BarcodeResult> getBarcodeResultObservable() {
-        return barcodeResultObservable;
+    public LiveData<List<Barcode>> getAllBarcodesObservable() {
+        return allBarcodesObservable;
+    }
+
+    public LiveData<BarcodeResult> getDetectedBarcodeResult() {
+        return detectedBarcode;
+    }
+
+    public LiveData<WorkflowState> getWorkflowState() {
+        return workflowState;
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -252,17 +286,12 @@ public class BarcodeScannerViewModel extends AndroidViewModel {
         private void process(InputImage image) {
             /*Task<List<Barcode>> result = */
             barcodeScanner.process(image)
-                    .addOnSuccessListener(barcodes -> {
-                        // Task completed successfully
-                        //ArrayList<BarcodeResult> barcodeResults = new ArrayList<>();
-                        for (Barcode barcode : barcodes) {
-                            // barcodeResults.add(BarcodeResult.fromBarcode(barcode));
-                            final BarcodeResult barcodeResult = BarcodeResult.fromBarcode(barcode);
-                            barcodeResultObservable.setValue(barcodeResult);
-                            break;
+                    .addOnSuccessListener(mainScopeExecutor, barcodes -> {
+                        if (barcodes != null) {
+                            allBarcodesObservable.setValue(barcodes);
                         }
                     })
-                    .addOnFailureListener(e -> {
+                    .addOnFailureListener(mainScopeExecutor, e -> {
                         // Task failed with an exception
                         Log.e(TAG, "Error processing", e);
                     });

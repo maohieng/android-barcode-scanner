@@ -85,16 +85,12 @@ public class BarcodeResult implements Parcelable {
         return valueType == that.valueType &&
                 format == that.format &&
                 Objects.equals(rawValue, that.rawValue) &&
-                Objects.equals(displayValue, that.displayValue) &&
-                Objects.equals(wifi, that.wifi) &&
-                Objects.equals(url, that.url) &&
-                Objects.equals(boundingBox, that.boundingBox) &&
-                Arrays.equals(cornerPoints, that.cornerPoints);
+                Objects.equals(displayValue, that.displayValue);
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(rawValue, displayValue, valueType, format, wifi, url, boundingBox);
+        int result = Objects.hash(rawValue, displayValue, valueType, format);
         result = 31 * result + Arrays.hashCode(cornerPoints);
         return result;
     }

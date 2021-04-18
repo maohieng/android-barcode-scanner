@@ -32,8 +32,15 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".BarCodeScannerActivity" />
-        <activity android:name=".BarcodeScannerSampleActivity" />
+        <activity
+            android:name=".sample.BarCodeScannerActivity"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".sample.BarcodeScannerSampleActivity"
+            android:theme="@style/AppTheme.NoActionBar" />
+        <activity
+            android:name=".sample.BarcodeProcessorActivity"
+            android:theme="@style/AppTheme.NoActionBar" />
     </application>
 
 </manifest>

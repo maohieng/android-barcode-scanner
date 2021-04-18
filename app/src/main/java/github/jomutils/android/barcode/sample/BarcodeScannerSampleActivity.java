@@ -1,17 +1,18 @@
-package github.jomutils.android.barcode;
+package github.jomutils.android.barcode.sample;
 
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
-import android.util.DisplayMetrics;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.camera.core.Camera;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
 import androidx.core.app.ActivityCompat;
@@ -20,10 +21,13 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.google.mlkit.vision.barcode.Barcode;
 
+import github.jomutils.android.barcode.BarcodeScannerViewModel;
+import github.jomutils.android.barcode.R;
+
 import static github.jomutils.android.barcode.BarcodeScannerViewModel.REQUEST_CODE_PERMISSIONS;
 import static github.jomutils.android.barcode.BarcodeScannerViewModel.REQUIRED_PERMISSIONS;
-import static github.jomutils.android.barcode.Constants.EXTRA_BARCODE_FORMATS;
-import static github.jomutils.android.barcode.Constants.EXTRA_BARCODE_RESULT;
+import static github.jomutils.android.barcode.sample.Constants.EXTRA_BARCODE_FORMATS;
+import static github.jomutils.android.barcode.sample.Constants.EXTRA_BARCODE_RESULT;
 
 public class BarcodeScannerSampleActivity extends AppCompatActivity {
 
@@ -54,6 +58,7 @@ public class BarcodeScannerSampleActivity extends AppCompatActivity {
     }
 
     private PreviewView previewView;
+    private Camera camera;
 
     BarcodeScannerViewModel viewModel;
 
@@ -70,13 +75,8 @@ public class BarcodeScannerSampleActivity extends AppCompatActivity {
 
         viewModel.getBarcodeResultObservable().observe(this, barcodeResult -> {
             if (barcodeResult != null) {
-                // Vibrate
-                Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
-                if (Build.VERSION.SDK_INT >= 26) {
-                    vibrator.vibrate(VibrationEffect.createOneShot(250, VibrationEffect.DEFAULT_AMPLITUDE));
-                } else {
-                    vibrator.vibrate(250);
-                }
+                // Play sound and vibrate
+                soundAndVibrate();
 
                 // Finish with result
                 Intent data = new Intent();
@@ -109,19 +109,20 @@ public class BarcodeScannerSampleActivity extends AppCompatActivity {
     }
 
     private void startCamera(@NonNull ProcessCameraProvider cameraProvider) {
-        // Create a Preview
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        previewView.getDisplay().getRealMetrics(displayMetrics);
-
-        final int aspectRatio = CameraHelper.getAspectRatio(displayMetrics.widthPixels, displayMetrics.heightPixels);
-
-        final int rotation = previewView.getDisplay().getRotation();
-
-        viewModel.bindCameraProviderToLifecycle(cameraProvider,
+        camera = viewModel.startCamera(
+                cameraProvider,
                 this,
-                previewView,
-                aspectRatio,
-                rotation);
+                previewView);
+    }
+
+    private void soundAndVibrate() {
+        MediaPlayer.create(this, R.raw.beep).start();
+        Vibrator vibrator = (Vibrator) getSystemService(Context.VIBRATOR_SERVICE);
+        if (Build.VERSION.SDK_INT >= 26) {
+            vibrator.vibrate(VibrationEffect.createOneShot(250, VibrationEffect.DEFAULT_AMPLITUDE));
+        } else {
+            vibrator.vibrate(250);
+        }
     }
 
     ///////////////////////////////////////////////////////////////////////////

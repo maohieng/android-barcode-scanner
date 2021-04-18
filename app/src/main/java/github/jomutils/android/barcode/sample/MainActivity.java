@@ -15,10 +15,9 @@ import androidx.navigation.fragment.NavHostFragment;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import github.jomutils.android.barcode.BarcodeResult;
-import github.jomutils.android.barcode.BarcodeScannerSampleActivity;
 import github.jomutils.android.barcode.R;
 
-import static github.jomutils.android.barcode.Constants.EXTRA_BARCODE_RESULT;
+import static github.jomutils.android.barcode.sample.Constants.EXTRA_BARCODE_RESULT;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -95,7 +94,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startScanning() {
-        BarcodeScannerSampleActivity.startForResult(this, null, REQUEST_CODE_START_SCANNER);
+        BarcodeProcessorActivity.startForResult(this, null, REQUEST_CODE_START_SCANNER);
 //        BarCodeScannerActivity.startForResult(this, null, REQUEST_CODE_START_SCANNER);
     }
 }
