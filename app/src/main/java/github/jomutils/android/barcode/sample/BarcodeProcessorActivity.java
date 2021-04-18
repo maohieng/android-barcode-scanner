@@ -6,7 +6,6 @@ import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.graphics.Rect;
 import android.graphics.RectF;
 import android.media.MediaPlayer;
 import android.os.Build;
@@ -14,8 +13,9 @@ import android.os.Bundle;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.util.Log;
-import android.util.SizeF;
+import android.util.Size;
 import android.view.View;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -75,14 +75,17 @@ public class BarcodeProcessorActivity extends AppCompatActivity {
         fragment.startActivityForResult(starter, requestCode);
     }
 
-    private Camera camera;
 
     private PreviewView previewView;
+    private Camera camera;
+
     private GraphicOverlay graphicOverlay;
     private Chip promptChip;
     private AnimatorSet promptChipAnimator;
 
     private CameraReticleAnimator cameraReticleAnimator;
+
+    private View flashButton;
 
     BarcodeProcessorViewModel viewModel;
 
@@ -90,6 +93,22 @@ public class BarcodeProcessorActivity extends AppCompatActivity {
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_barcode_processor);
+
+        findViewById(R.id.close_button).setOnClickListener(v -> onBackPressed());
+        flashButton = findViewById(R.id.flash_button);
+        flashButton.setOnClickListener(v -> {
+            if (camera != null && camera.getCameraInfo().hasFlashUnit()) {
+                if (v.isSelected()) {
+                    v.setSelected(false);
+                    camera.getCameraControl().enableTorch(false);
+                } else {
+                    v.setSelected(true);
+                    camera.getCameraControl().enableTorch(true);
+                }
+            } else {
+                Toast.makeText(this, "No flash unit", Toast.LENGTH_LONG).show();
+            }
+        });
 
         previewView = findViewById(R.id.viewFinder);
         graphicOverlay = findViewById(R.id.graphicOverlay);
@@ -180,13 +199,18 @@ public class BarcodeProcessorActivity extends AppCompatActivity {
     }
 
     private void startCamera(@NonNull ProcessCameraProvider cameraProvider) {
-        setPreviewAndPictureSize();
+        final RectF barcodeReticleBox = PreferenceUtils.getBarcodeReticleBox(graphicOverlay);
+        final Size size = new Size(Math.round(barcodeReticleBox.width()), Math.round(barcodeReticleBox.height()));
 
         camera = viewModel.startCamera(
                 cameraProvider,
                 this,
-                previewView);
+                previewView,
+                size);
 
+        if (camera.getCameraInfo().hasFlashUnit()) {
+            camera.getCameraControl().enableTorch(flashButton.isSelected());
+        }
     }
 
     private void stopCamera() {
@@ -194,12 +218,6 @@ public class BarcodeProcessorActivity extends AppCompatActivity {
         if (value != null) {
             value.unbindAll();
         }
-    }
-
-    private void setPreviewAndPictureSize() {
-        final RectF barcodeReticleBox = PreferenceUtils.getBarcodeReticleBox(graphicOverlay);
-        graphicOverlay.setPreviewSize(new SizeF(barcodeReticleBox.width(), barcodeReticleBox.height()));
-        graphicOverlay.clear();
     }
 
     private void soundAndVibrate() {
@@ -216,33 +234,36 @@ public class BarcodeProcessorActivity extends AppCompatActivity {
         Intent data = new Intent();
         data.putExtra(EXTRA_BARCODE_RESULT, barcodeResult);
         setResult(RESULT_OK, data);
+        // TODO: 4/18/21 Uncomment
         finish();
     }
 
     private void onCameraProcessing(@NonNull List<Barcode> barcodes) {
-        Log.d(TAG, "Barcode result size: " + barcodes.size());
+        // Log.d(TAG, "Barcode result size: " + barcodes.size());
         GraphicOverlay graphicOverlay = this.graphicOverlay;
 
         // Picks the barcode, if exists, that covers the center of graphic overlay.
         Barcode barcodeInCenter = null;
-        for (Barcode barcode : barcodes) {
-            final Rect boundingBox = barcode.getBoundingBox();
-            if (boundingBox != null) {
-                final RectF box = graphicOverlay.translateRect(boundingBox);
-                final boolean contains = box.contains(graphicOverlay.getWidth() / 2f, graphicOverlay.getHeight() / 2f);
-                if (contains) {
-                    barcodeInCenter = barcode;
-                    break;
-                }
-            }
-        }
+//        for (Barcode barcode : barcodes) {
+//            final Rect boundingBox = barcode.getBoundingBox();
+//            if (boundingBox != null) {
+//                final RectF box = graphicOverlay.translateRect(boundingBox);
+//                final boolean contains = box.contains(graphicOverlay.getWidth() / 2f, graphicOverlay.getHeight() / 2f);
+//                if (contains) {
+//                    barcodeInCenter = barcode;
+//                    break;
+//                }
+//            }
+//        }
 
         graphicOverlay.clear();
-        if (barcodeInCenter == null) {
+        if (barcodes.isEmpty()) {
             cameraReticleAnimator.start();
             graphicOverlay.add(new BarcodeReticleGraphic(graphicOverlay, cameraReticleAnimator));
             viewModel.setWorkflowState(BarcodeProcessorViewModel.WorkflowState.DETECTING);
         } else {
+            barcodeInCenter = barcodes.get(0);
+
             cameraReticleAnimator.cancel();
             Log.i(TAG, "onCameraProcessing: Got a barcodeCenter " + barcodeInCenter.getBoundingBox());
             float sizeProgress = PreferenceUtils.getProgressToMeetBarcodeSizeRequirement(graphicOverlay, barcodeInCenter);

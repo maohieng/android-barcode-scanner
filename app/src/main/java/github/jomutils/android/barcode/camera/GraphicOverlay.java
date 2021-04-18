@@ -6,7 +6,6 @@ import android.graphics.Canvas;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.util.AttributeSet;
-import android.util.SizeF;
 import android.view.View;
 
 import androidx.annotation.NonNull;
@@ -126,14 +125,23 @@ public class GraphicOverlay extends View {
      * Sets the camera attributes for size and facing direction, which informs how to transform image
      * coordinates later.
      */
-    public void setPreviewSize(@NonNull SizeF previewSize) {
+    public void setPreviewSize(@NonNull RectF previewSize) {
+//        if (isPortraitMode()) {
+//            // Swap width and height when in portrait, since camera's natural orientation is landscape.
+//            previewWidth = (int) (previewSize.height() / heightScaleFactor);
+//            previewHeight = (int) (previewSize.width() / widthScaleFactor);
+//        } else {
+//            previewWidth = (int) (previewSize.width() / widthScaleFactor);
+//            previewHeight = (int) (previewSize.height() / heightScaleFactor);
+//        }
+
         if (isPortraitMode()) {
             // Swap width and height when in portrait, since camera's natural orientation is landscape.
-            previewWidth = (int) (previewSize.getHeight() / heightScaleFactor);
-            previewHeight = (int) (previewSize.getWidth() / widthScaleFactor);
+            previewWidth = (int) previewSize.height();
+            previewHeight = (int) previewSize.width();
         } else {
-            previewWidth = (int) (previewSize.getWidth() / widthScaleFactor);
-            previewHeight = (int) (previewSize.getHeight() / heightScaleFactor);
+            previewWidth = (int) previewSize.width();
+            previewHeight = (int) previewSize.height();
         }
     }
 //
@@ -172,10 +180,10 @@ public class GraphicOverlay extends View {
      */
     public RectF translateRect(Rect rect) {
         return new RectF(
-                translateX((float) rect.left),
-                translateY((float) rect.top),
-                translateX((float) rect.right),
-                translateY((float) rect.bottom)
+                translateX(rect.left),
+                translateY(rect.top),
+                translateX(rect.right),
+                translateY(rect.bottom)
         );
     }
 

@@ -5,6 +5,7 @@ import android.app.Application;
 import android.content.pm.PackageManager;
 import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.Size;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -168,7 +169,8 @@ public class BarcodeProcessorViewModel extends AndroidViewModel {
 
     public Camera startCamera(ProcessCameraProvider processCameraProvider,
                               LifecycleOwner owner,
-                              PreviewView previewView) {
+                              PreviewView previewView,
+                              Size analyzeSize) {
         workflowState.setValue(WorkflowState.DETECTING);
 
         // Create a Preview
@@ -184,9 +186,10 @@ public class BarcodeProcessorViewModel extends AndroidViewModel {
         CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
 
         final ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
-                .setTargetAspectRatio(aspectRatio)
+                /*.setTargetAspectRatio(aspectRatio)*/
                 .setTargetRotation(rotation)
                 .setImageQueueDepth(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                .setTargetResolution(analyzeSize)
                 .build();
         imageAnalysis.setAnalyzer(analyzeExecutor, imageAnalyzer);
 
