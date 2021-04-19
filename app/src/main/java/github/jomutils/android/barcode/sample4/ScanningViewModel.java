@@ -254,10 +254,10 @@ public class ScanningViewModel extends AndroidViewModel {
 
     public void setDetectedBarcode(Barcode barcode) {
         final BarcodeResult barcodeResult = BarcodeResult.fromBarcode(barcode);
-        final BarcodeResult value = detectedBarcode.getValue();
-        if (value == null || !value.equals(barcodeResult)) {
-            detectedBarcode.setValue(barcodeResult);
-        }
+//        final BarcodeResult value = detectedBarcode.getValue();
+//        if (value == null || !value.equals(barcodeResult)) {
+        detectedBarcode.setValue(barcodeResult);
+//        }
     }
 
     public LiveData<Boolean> getPermissionGrantingObservable() {

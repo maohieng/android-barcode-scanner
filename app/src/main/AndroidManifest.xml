@@ -52,6 +52,11 @@
             android:theme="@style/AppTheme.NoActionBar" />
 
         <activity
+            android:name=".sample5.BarcodeScanningXActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar" />
+
+        <activity
             android:name=".settings.SettingsActivity"
             android:exported="false"
             android:label="@string/action_settings"

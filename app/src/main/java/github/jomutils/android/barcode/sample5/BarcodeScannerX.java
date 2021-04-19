@@ -1,10 +1,12 @@
-package github.jomutils.android.barcode.sample4;
+package github.jomutils.android.barcode.sample5;
 
 import android.animation.ValueAnimator;
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.RectF;
 import android.media.MediaPlayer;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.util.Log;
@@ -12,10 +14,14 @@ import android.util.Size;
 
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.camera.core.Camera;
 import androidx.camera.lifecycle.ProcessCameraProvider;
 import androidx.camera.view.PreviewView;
+import androidx.core.app.ActivityCompat;
+import androidx.fragment.app.Fragment;
 import androidx.lifecycle.LifecycleOwner;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.google.mlkit.vision.barcode.Barcode;
 
@@ -26,11 +32,14 @@ import github.jomutils.android.barcode.R;
 import github.jomutils.android.barcode.WorkflowState;
 import github.jomutils.android.barcode.camera.CameraReticleAnimator;
 import github.jomutils.android.barcode.camera.GraphicOverlay;
+import github.jomutils.android.barcode.sample4.ScanningViewModel;
 import github.jomutils.android.barcode.settings.PreferenceUtils;
 import github.jomutils.android.barcode.widget.BarcodeLoadingGraphic;
 import github.jomutils.android.barcode.widget.BarcodeReticleGraphic;
 
-public class BarcodeScannerUI {
+import static github.jomutils.android.barcode.sample.Constants.EXTRA_BARCODE_FORMATS;
+
+public class BarcodeScannerX {
 
     public abstract static class ScannerCallback {
         public abstract void onCameraStart(@NonNull Camera camera);
@@ -47,6 +56,7 @@ public class BarcodeScannerUI {
 
     private final Context context;
     private final ScanningViewModel viewModel;
+
     private final PreviewView previewView;
     private final GraphicOverlay graphicOverlay;
 
@@ -58,13 +68,58 @@ public class BarcodeScannerUI {
     private ScannerCallback callback;
     private WorkflowCallback workflowCallback;
 
-    public BarcodeScannerUI(ScanningViewModel viewModel, PreviewView previewView, GraphicOverlay graphicOverlay) {
-        this.context = graphicOverlay.getContext();
+    public BarcodeScannerX(ScanningViewModel viewModel, PreviewView previewView, GraphicOverlay graphicOverlay) {
         this.viewModel = viewModel;
+        this.context = graphicOverlay.getContext();
         this.previewView = previewView;
         this.graphicOverlay = graphicOverlay;
         // Setup Camera Preview Box
         cameraReticleAnimator = new CameraReticleAnimator(this.graphicOverlay);
+    }
+
+    /**
+     * Used at Activity's onCreate()
+     */
+    public BarcodeScannerX(AppCompatActivity activity, PreviewView previewView, GraphicOverlay graphicOverlay) {
+        final int[] formats = activity.getIntent().getIntArrayExtra(EXTRA_BARCODE_FORMATS);
+
+        ScanningViewModel.Factory factory = new ScanningViewModel.Factory(activity.getApplication(), formats);
+        this.viewModel = new ViewModelProvider(activity, factory).get(ScanningViewModel.class);
+
+        this.context = graphicOverlay.getContext();
+        this.previewView = previewView;
+        this.graphicOverlay = graphicOverlay;
+        // Setup Camera Preview Box
+        cameraReticleAnimator = new CameraReticleAnimator(this.graphicOverlay);
+
+        bindToLifecycle(activity);
+
+        checkPermission(activity);
+    }
+
+    /**
+     * Used at Fragment's onCreateView() or onViewCreated() or onActivityCreated
+     *
+     * @param fragment       a Fragment that should has arguments contains {@link Barcode} formats.
+     * @param previewView    CameraX PreviewView
+     * @param graphicOverlay
+     */
+    public BarcodeScannerX(Fragment fragment, PreviewView previewView, GraphicOverlay graphicOverlay) {
+        final Bundle arguments = fragment.getArguments();
+        final int[] formats = arguments != null ? arguments.getIntArray(EXTRA_BARCODE_FORMATS) : null;
+
+        ScanningViewModel.Factory factory = new ScanningViewModel.Factory(fragment.requireActivity().getApplication(), formats);
+        this.viewModel = new ViewModelProvider(fragment, factory).get(ScanningViewModel.class);
+
+        this.context = graphicOverlay.getContext();
+        this.previewView = previewView;
+        this.graphicOverlay = graphicOverlay;
+        // Setup Camera Preview Box
+        cameraReticleAnimator = new CameraReticleAnimator(this.graphicOverlay);
+
+        bindToLifecycle(fragment);
+
+        checkPermission(fragment.requireActivity());
     }
 
     public void setCallback(ScannerCallback callback) {
@@ -109,6 +164,7 @@ public class BarcodeScannerUI {
 
         viewModel.getAllBarcodesObservable().observe(lifecycleOwner, barcodes -> {
             if (barcodes != null) {
+                // TODO: 4/19/21 uncomment
                 onCameraProcessing(barcodes);
             }
         });
@@ -124,7 +180,18 @@ public class BarcodeScannerUI {
         });
     }
 
-//    public BarcodeScannerUI(AppCompatActivity appCompatActivity,)
+    private void checkPermission(Activity activity) {
+        if (!viewModel.allPermissionsGranted()) {
+            ActivityCompat.requestPermissions(
+                    activity, ScanningViewModel.REQUIRED_PERMISSIONS.toArray(new String[0]), ScanningViewModel.REQUEST_CODE_PERMISSIONS);
+        }
+    }
+
+    public boolean onRequestCameraPermission(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        viewModel.onRequestCameraPermission(requestCode, permissions, grantResults);
+        final Boolean granted = viewModel.getPermissionGrantingObservable().getValue();
+        return granted == null || granted;
+    }
 
     private Camera startCamera(@NonNull ProcessCameraProvider cameraProvider, LifecycleOwner lifecycleOwner) {
         isCameraLive = true;
@@ -236,10 +303,12 @@ public class BarcodeScannerUI {
     private void soundAndVibrate() {
         MediaPlayer.create(context, R.raw.beep).start();
         Vibrator vibrator = (Vibrator) context.getSystemService(Context.VIBRATOR_SERVICE);
-        if (Build.VERSION.SDK_INT >= 26) {
-            vibrator.vibrate(VibrationEffect.createOneShot(250, VibrationEffect.DEFAULT_AMPLITUDE));
-        } else {
-            vibrator.vibrate(250);
+        if (vibrator != null) {
+            if (Build.VERSION.SDK_INT >= 26) {
+                vibrator.vibrate(VibrationEffect.createOneShot(250, VibrationEffect.DEFAULT_AMPLITUDE));
+            } else {
+                vibrator.vibrate(250);
+            }
         }
     }
 }
