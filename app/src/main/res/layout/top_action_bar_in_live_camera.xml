@@ -22,7 +22,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentEnd="true"
         android:padding="@dimen/top_action_button_padding"
-        android:contentDescription="@string/cd_settings_button"
+        android:contentDescription="@string/action_settings"
         app:srcCompat="@drawable/ic_settings_white_24" />
 
     <ImageView

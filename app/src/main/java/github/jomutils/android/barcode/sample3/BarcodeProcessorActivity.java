@@ -1,4 +1,4 @@
-package github.jomutils.android.barcode.sample;
+package github.jomutils.android.barcode.sample3;
 
 import android.animation.AnimatorInflater;
 import android.animation.AnimatorSet;
@@ -32,20 +32,25 @@ import com.google.mlkit.vision.barcode.Barcode;
 
 import java.util.List;
 
-import github.jomutils.android.barcode.BarcodeProcessorViewModel;
 import github.jomutils.android.barcode.BarcodeResult;
 import github.jomutils.android.barcode.R;
 import github.jomutils.android.barcode.camera.CameraReticleAnimator;
 import github.jomutils.android.barcode.camera.GraphicOverlay;
 import github.jomutils.android.barcode.settings.PreferenceUtils;
+import github.jomutils.android.barcode.settings.SettingsActivity;
 import github.jomutils.android.barcode.widget.BarcodeConfirmingGraphic;
 import github.jomutils.android.barcode.widget.BarcodeLoadingGraphic;
 import github.jomutils.android.barcode.widget.BarcodeReticleGraphic;
 
-import static github.jomutils.android.barcode.BarcodeScannerViewModel.REQUEST_CODE_PERMISSIONS;
-import static github.jomutils.android.barcode.BarcodeScannerViewModel.REQUIRED_PERMISSIONS;
+import static github.jomutils.android.barcode.WorkflowState.CONFIRMING;
+import static github.jomutils.android.barcode.WorkflowState.DETECTED;
+import static github.jomutils.android.barcode.WorkflowState.DETECTING;
+import static github.jomutils.android.barcode.WorkflowState.PROCEED;
+import static github.jomutils.android.barcode.WorkflowState.PROCESSING;
 import static github.jomutils.android.barcode.sample.Constants.EXTRA_BARCODE_FORMATS;
 import static github.jomutils.android.barcode.sample.Constants.EXTRA_BARCODE_RESULT;
+import static github.jomutils.android.barcode.sample1.BarcodeScannerViewModel.REQUEST_CODE_PERMISSIONS;
+import static github.jomutils.android.barcode.sample1.BarcodeScannerViewModel.REQUIRED_PERMISSIONS;
 
 public class BarcodeProcessorActivity extends AppCompatActivity {
 
@@ -108,6 +113,9 @@ public class BarcodeProcessorActivity extends AppCompatActivity {
             } else {
                 Toast.makeText(this, "No flash unit", Toast.LENGTH_LONG).show();
             }
+        });
+        findViewById(R.id.settings_button).setOnClickListener(v -> {
+            startActivity(new Intent(this, SettingsActivity.class));
         });
 
         previewView = findViewById(R.id.viewFinder);
@@ -260,7 +268,7 @@ public class BarcodeProcessorActivity extends AppCompatActivity {
         if (barcodes.isEmpty()) {
             cameraReticleAnimator.start();
             graphicOverlay.add(new BarcodeReticleGraphic(graphicOverlay, cameraReticleAnimator));
-            viewModel.setWorkflowState(BarcodeProcessorViewModel.WorkflowState.DETECTING);
+            viewModel.setWorkflowState(DETECTING);
         } else {
             barcodeInCenter = barcodes.get(0);
 
@@ -270,16 +278,16 @@ public class BarcodeProcessorActivity extends AppCompatActivity {
             if (sizeProgress < 1) {
                 // Barcode in the camera view is too small, so prompt user to move camera closer.
                 graphicOverlay.add(new BarcodeConfirmingGraphic(graphicOverlay, barcodeInCenter));
-                viewModel.setWorkflowState(BarcodeProcessorViewModel.WorkflowState.CONFIRMING);
+                viewModel.setWorkflowState(CONFIRMING);
             } else {
                 // Barcode size in the camera view is sufficient.
                 if (PreferenceUtils.shouldDelayLoadingBarcodeResult(graphicOverlay.getContext())) {
                     ValueAnimator loadingAnimator = createLoadingAnimator(graphicOverlay, barcodeInCenter);
                     loadingAnimator.start();
                     graphicOverlay.add(new BarcodeLoadingGraphic(graphicOverlay, loadingAnimator));
-                    viewModel.setWorkflowState(BarcodeProcessorViewModel.WorkflowState.PROCESSING);
+                    viewModel.setWorkflowState(PROCESSING);
                 } else {
-                    viewModel.setWorkflowState(BarcodeProcessorViewModel.WorkflowState.DETECTED);
+                    viewModel.setWorkflowState(DETECTED);
                     viewModel.setDetectedBarcode(barcodeInCenter);
                 }
             }
@@ -296,7 +304,7 @@ public class BarcodeProcessorActivity extends AppCompatActivity {
             if (animatedValue.compareTo(endProgress) >= 0) {
                 Log.i(TAG, "createLoadingAnimator: animation DONE");
                 graphicOverlay.clear();
-                viewModel.setWorkflowState(BarcodeProcessorViewModel.WorkflowState.PROCEED);
+                viewModel.setWorkflowState(PROCEED);
                 viewModel.setDetectedBarcode(barcode);
             } else {
                 graphicOverlay.invalidate();

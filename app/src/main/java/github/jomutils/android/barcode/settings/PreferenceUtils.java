@@ -27,10 +27,7 @@ public final class PreferenceUtils {
         return sharedPreferences.getInt(prefKey, defaultValue);
     }
 
-    public static float getProgressToMeetBarcodeSizeRequirement(
-            GraphicOverlay overlay,
-            Barcode barcode
-    ) {
+    public static float getProgressToMeetBarcodeSizeRequirement(GraphicOverlay overlay, Barcode barcode) {
         Context context = overlay.getContext();
         if (getBooleanPref(context, R.string.pref_key_enable_barcode_size_check, false)) {
             float reticleBoxWidth = getBarcodeReticleBox(overlay).width();

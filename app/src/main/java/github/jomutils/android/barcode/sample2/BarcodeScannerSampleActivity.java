@@ -1,4 +1,4 @@
-package github.jomutils.android.barcode.sample;
+package github.jomutils.android.barcode.sample2;
 
 import android.app.Activity;
 import android.content.Context;
@@ -21,13 +21,13 @@ import androidx.lifecycle.ViewModelProvider;
 
 import com.google.mlkit.vision.barcode.Barcode;
 
-import github.jomutils.android.barcode.BarcodeScannerViewModel;
 import github.jomutils.android.barcode.R;
+import github.jomutils.android.barcode.sample1.BarcodeScannerViewModel;
 
-import static github.jomutils.android.barcode.BarcodeScannerViewModel.REQUEST_CODE_PERMISSIONS;
-import static github.jomutils.android.barcode.BarcodeScannerViewModel.REQUIRED_PERMISSIONS;
 import static github.jomutils.android.barcode.sample.Constants.EXTRA_BARCODE_FORMATS;
 import static github.jomutils.android.barcode.sample.Constants.EXTRA_BARCODE_RESULT;
+import static github.jomutils.android.barcode.sample1.BarcodeScannerViewModel.REQUEST_CODE_PERMISSIONS;
+import static github.jomutils.android.barcode.sample1.BarcodeScannerViewModel.REQUIRED_PERMISSIONS;
 
 public class BarcodeScannerSampleActivity extends AppCompatActivity {
 

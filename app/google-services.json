@@ -1,0 +1,146 @@
+{
+  "project_info": {
+    "project_number": "831314687861",
+    "firebase_url": "https://cellcard-dealer-app.firebaseio.com",
+    "project_id": "cellcard-dealer-app",
+    "storage_bucket": "cellcard-dealer-app.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:831314687861:android:7f36c9d1ca0a401f76453c",
+        "android_client_info": {
+          "package_name": "cammob.com.cellcard_dre"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "831314687861-c671dr8les1pa39phmvjlh6necrg1lna.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "cammob.com.cellcard_dre",
+            "certificate_hash": "2e6a105756884ec62f34f820797aca2cabafc28c"
+          }
+        },
+        {
+          "client_id": "831314687861-nrg5sofu337ahshrosjm8fvdmilh6onq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "cammob.com.cellcard_dre",
+            "certificate_hash": "059912667233c3f8177a65b3ddd93abb3ca2bbeb"
+          }
+        },
+        {
+          "client_id": "831314687861-r2oahvfsfbbcm7re8ttc5osohhpqhr86.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "cammob.com.cellcard_dre",
+            "certificate_hash": "d4359422b7450f6a16932e5c304248f3ac53a125"
+          }
+        },
+        {
+          "client_id": "831314687861-adbali64d17k6fio6fuqf23s2lr6i0pc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDvb_4SEbQmGTorPgaSa3WDOOx7hn-XrRE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "831314687861-adbali64d17k6fio6fuqf23s2lr6i0pc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:831314687861:android:7a370ce1c47a487e76453c",
+        "android_client_info": {
+          "package_name": "cammob.com.cellcard_sis"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "831314687861-2c222bmp1dru2d1dii9pmg65ok394t1c.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "cammob.com.cellcard_sis",
+            "certificate_hash": "2e6a105756884ec62f34f820797aca2cabafc28c"
+          }
+        },
+        {
+          "client_id": "831314687861-bnjatlovhhdq0ulirpm3e01a9repcgin.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "cammob.com.cellcard_sis",
+            "certificate_hash": "698bd9a22fa23d6b1074f77f0fbe4c85c8f57f9d"
+          }
+        },
+        {
+          "client_id": "831314687861-adbali64d17k6fio6fuqf23s2lr6i0pc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDvb_4SEbQmGTorPgaSa3WDOOx7hn-XrRE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "831314687861-adbali64d17k6fio6fuqf23s2lr6i0pc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:831314687861:android:c2669e7021c652ea76453c",
+        "android_client_info": {
+          "package_name": "github.jomutils.android.barcode"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "831314687861-hhg24p7s3s3i563tj00eb7mh2vj98s7b.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "github.jomutils.android.barcode",
+            "certificate_hash": "cdc9420a55e65182df3a65972c515724eb2e6f74"
+          }
+        },
+        {
+          "client_id": "831314687861-adbali64d17k6fio6fuqf23s2lr6i0pc.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDvb_4SEbQmGTorPgaSa3WDOOx7hn-XrRE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "831314687861-adbali64d17k6fio6fuqf23s2lr6i0pc.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

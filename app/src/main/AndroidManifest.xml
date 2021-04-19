@@ -32,15 +32,30 @@
             </intent-filter>
         </activity>
 
+        <!-- Sample -->
         <activity
-            android:name=".sample.BarCodeScannerActivity"
+            android:name=".sample1.BarCodeScannerActivity"
+            android:screenOrientation="portrait"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
-            android:name=".sample.BarcodeScannerSampleActivity"
+            android:name=".sample2.BarcodeScannerSampleActivity"
+            android:screenOrientation="portrait"
             android:theme="@style/AppTheme.NoActionBar" />
         <activity
-            android:name=".sample.BarcodeProcessorActivity"
+            android:name=".sample3.BarcodeProcessorActivity"
+            android:screenOrientation="portrait"
             android:theme="@style/AppTheme.NoActionBar" />
+
+        <activity
+            android:name=".sample4.BarcodeScanningActivity"
+            android:screenOrientation="portrait"
+            android:theme="@style/AppTheme.NoActionBar" />
+
+        <activity
+            android:name=".settings.SettingsActivity"
+            android:exported="false"
+            android:label="@string/action_settings"
+            android:screenOrientation="portrait"></activity>
     </application>
 
 </manifest>
