@@ -10,6 +10,7 @@ import android.os.Vibrator;
 import android.util.Log;
 import android.util.Size;
 
+import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.camera.core.Camera;
 import androidx.camera.lifecycle.ProcessCameraProvider;
@@ -26,7 +27,6 @@ import github.jomutils.android.barcode.WorkflowState;
 import github.jomutils.android.barcode.camera.CameraReticleAnimator;
 import github.jomutils.android.barcode.camera.GraphicOverlay;
 import github.jomutils.android.barcode.settings.PreferenceUtils;
-import github.jomutils.android.barcode.widget.BarcodeConfirmingGraphic;
 import github.jomutils.android.barcode.widget.BarcodeLoadingGraphic;
 import github.jomutils.android.barcode.widget.BarcodeReticleGraphic;
 
@@ -48,6 +48,8 @@ public class BarcodeScannerUI {
     private final ScanningViewModel viewModel;
     private final PreviewView previewView;
     private final GraphicOverlay graphicOverlay;
+
+    private boolean isCameraLive = false;
 
     private final CameraReticleAnimator cameraReticleAnimator;
 
@@ -122,6 +124,8 @@ public class BarcodeScannerUI {
 //    public BarcodeScannerUI(AppCompatActivity appCompatActivity,)
 
     private Camera startCamera(@NonNull ProcessCameraProvider cameraProvider, LifecycleOwner lifecycleOwner) {
+        isCameraLive = true;
+
         final Size size = getBarcodeReticleBoxSize();
 
         return viewModel.startCamera(
@@ -131,8 +135,18 @@ public class BarcodeScannerUI {
                 size);
     }
 
+    // TODO: 4/19/21 test this method
+    public void unfreezeCamera(LifecycleOwner lifecycleOwner) {
+        isCameraLive = true;
+        Log.i(TAG, "unfreezeCamera: ");
+        viewModel.unFreezeCamera(lifecycleOwner);
+    }
+
+    @MainThread
     public void freezeCamera() {
-        viewModel.cameraUnbindAll();
+        isCameraLive = false;
+        Log.i(TAG, "freezeCamera: ");
+        viewModel.freezeCamera();
     }
 
     private Size getBarcodeReticleBoxSize() {
@@ -141,6 +155,9 @@ public class BarcodeScannerUI {
     }
 
     private void onCameraProcessing(@NonNull List<Barcode> barcodes) {
+
+        if (!isCameraLive) return;
+
         // Log.d(TAG, "Barcode result size: " + barcodes.size());
         GraphicOverlay graphicOverlay = this.graphicOverlay;
 
@@ -168,23 +185,23 @@ public class BarcodeScannerUI {
 
             cameraReticleAnimator.cancel();
             Log.i(TAG, "onCameraProcessing: Got a barcodeCenter " + barcodeInCenter.getBoundingBox());
-            float sizeProgress = PreferenceUtils.getProgressToMeetBarcodeSizeRequirement(graphicOverlay, barcodeInCenter);
-            if (sizeProgress < 1) {
-                // Barcode in the camera view is too small, so prompt user to move camera closer.
-                graphicOverlay.add(new BarcodeConfirmingGraphic(graphicOverlay, barcodeInCenter));
-                viewModel.setWorkflowState(WorkflowState.CONFIRMING);
+//            float sizeProgress = PreferenceUtils.getProgressToMeetBarcodeSizeRequirement(graphicOverlay, barcodeInCenter);
+//            if (sizeProgress < 1) {
+            // Barcode in the camera view is too small, so prompt user to move camera closer.
+//                graphicOverlay.add(new BarcodeConfirmingGraphic(graphicOverlay, barcodeInCenter));
+//                viewModel.setWorkflowState(WorkflowState.CONFIRMING);
+//            } else {
+            // Barcode size in the camera view is sufficient.
+            if (PreferenceUtils.shouldDelayLoadingBarcodeResult(graphicOverlay.getContext())) {
+                ValueAnimator loadingAnimator = createLoadingAnimator(graphicOverlay, barcodeInCenter);
+                loadingAnimator.start();
+                graphicOverlay.add(new BarcodeLoadingGraphic(graphicOverlay, loadingAnimator));
+                viewModel.setWorkflowState(WorkflowState.PROCESSING);
             } else {
-                // Barcode size in the camera view is sufficient.
-                if (PreferenceUtils.shouldDelayLoadingBarcodeResult(graphicOverlay.getContext())) {
-                    ValueAnimator loadingAnimator = createLoadingAnimator(graphicOverlay, barcodeInCenter);
-                    loadingAnimator.start();
-                    graphicOverlay.add(new BarcodeLoadingGraphic(graphicOverlay, loadingAnimator));
-                    viewModel.setWorkflowState(WorkflowState.PROCESSING);
-                } else {
-                    viewModel.setWorkflowState(WorkflowState.DETECTED);
-                    viewModel.setDetectedBarcode(barcodeInCenter);
-                }
+                viewModel.setWorkflowState(WorkflowState.DETECTED);
+                viewModel.setDetectedBarcode(barcodeInCenter);
             }
+//            }
         }
         graphicOverlay.invalidate();
     }

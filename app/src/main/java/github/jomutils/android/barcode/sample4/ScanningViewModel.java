@@ -72,6 +72,9 @@ public class ScanningViewModel extends AndroidViewModel {
         REQUIRED_PERMISSIONS.add(Manifest.permission.CAMERA);
     }
 
+    private final CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
+    private Preview cameraPreview;
+
     private final ExecutorService analyzeExecutor;
     private final ScopedExecutor mainScopeExecutor;
 
@@ -187,8 +190,6 @@ public class ScanningViewModel extends AndroidViewModel {
         );
         final int rotation = previewView.getDisplay().getRotation();
 
-        CameraSelector cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA;
-
         final ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
                 /*.setTargetAspectRatio(aspectRatio)*/
                 .setTargetRotation(rotation)
@@ -201,24 +202,32 @@ public class ScanningViewModel extends AndroidViewModel {
 
 //        setBokehEffect(previewBuilder, cameraSelector);
 
-        Preview preview = previewBuilder.build();
-        preview.setSurfaceProvider(previewView.getSurfaceProvider());
+        cameraPreview = previewBuilder.build();
+        cameraPreview.setSurfaceProvider(previewView.getSurfaceProvider());
 
         ImageCapture imageCapture = setupImageCapture();
 
         return processCameraProvider.bindToLifecycle(
                 owner,
                 cameraSelector,
-                preview,
+                cameraPreview,
                 imageCapture,
                 imageAnalysis
         );
     }
 
-    public void cameraUnbindAll() {
+    public void freezeCamera() {
         final ProcessCameraProvider value = processCameraProvider.getValue();
         if (value != null) {
-            value.unbindAll();
+            value.unbind(cameraPreview);
+        }
+    }
+
+    // TODO: 4/19/21 test this method
+    public void unFreezeCamera(LifecycleOwner lifecycleOwner) {
+        final ProcessCameraProvider value = processCameraProvider.getValue();
+        if (value != null && !value.isBound(cameraPreview)) {
+            value.bindToLifecycle(lifecycleOwner, cameraSelector, cameraPreview);
         }
     }
 
@@ -249,10 +258,6 @@ public class ScanningViewModel extends AndroidViewModel {
         if (value == null || !value.equals(barcodeResult)) {
             detectedBarcode.setValue(barcodeResult);
         }
-    }
-
-    public BarcodeImageAnalyzer getImageAnalyzer() {
-        return imageAnalyzer;
     }
 
     public LiveData<Boolean> getPermissionGrantingObservable() {

@@ -6,7 +6,6 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
@@ -120,17 +119,13 @@ public class BarcodeScanningActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onBarcodeDetectedResult(BarcodeResult barcodeResult) {
+            public void onBarcodeDetectedResult(@NonNull BarcodeResult barcodeResult) {
                 // Finish with result
                 finishWithResult(barcodeResult);
             }
         });
 
         scannerUI.setWorkflowCallback(workflowState -> {
-            Log.i(TAG, "workflowState: " + workflowState);
-            if (workflowState == null)
-                return;
-
             boolean wasPromptChipGone = promptChip.getVisibility() == View.GONE;
             switch (workflowState) {
                 case DETECTING:
@@ -144,10 +139,6 @@ public class BarcodeScanningActivity extends AppCompatActivity {
                 case PROCESSING:
                     promptChip.setVisibility(View.VISIBLE);
                     promptChip.setText(R.string.prompt_processing);
-                    break;
-                case DETECTED:
-                case PROCEED:
-                    promptChip.setVisibility(View.GONE);
                     break;
                 default:
                     promptChip.setVisibility(View.GONE);
