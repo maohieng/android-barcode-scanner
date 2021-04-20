@@ -25,7 +25,6 @@ import github.jomutils.android.barcode.R;
 import github.jomutils.android.barcode.camera.GraphicOverlay;
 import github.jomutils.android.barcode.settings.SettingsActivity;
 
-import static github.jomutils.android.barcode.sample.Constants.EXTRA_BARCODE_FORMATS;
 import static github.jomutils.android.barcode.sample.Constants.EXTRA_BARCODE_RESULT;
 
 public class BarcodeScanningXActivity extends AppCompatActivity {
@@ -42,7 +41,7 @@ public class BarcodeScanningXActivity extends AppCompatActivity {
      */
     public static Intent starter(Context context, int[] formats) {
         Intent starter = new Intent(context, BarcodeScanningXActivity.class);
-        starter.putExtra(EXTRA_BARCODE_FORMATS, formats);
+        starter.putExtra(BarcodeScannerX.EXTRA_BARCODE_FORMATS, formats);
         return starter;
     }
 
@@ -102,7 +101,7 @@ public class BarcodeScanningXActivity extends AppCompatActivity {
         promptChipAnimator = (AnimatorSet) AnimatorInflater.loadAnimator(this, R.animator.bottom_prompt_chip_enter);
         promptChipAnimator.setTarget(promptChip);
 
-        scannerUI = new BarcodeScannerX(this, previewView, graphicOverlay);
+        scannerUI = BarcodeScannerX.New(this, previewView, graphicOverlay);
         scannerUI.setCallback(new BarcodeScannerX.ScannerCallback() {
             @Override
             public void onCameraStart(@NonNull Camera camera) {

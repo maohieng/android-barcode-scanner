@@ -24,13 +24,6 @@
             app:min="20"
             app:showSeekBarValue="true" />
 
-        <androidx.preference.SwitchPreferenceCompat
-            android:defaultValue="false"
-            android:key="@string/pref_key_enable_barcode_size_check"
-            android:persistent="true"
-            android:summary="@string/pref_summary_enable_barcode_size_check"
-            android:title="@string/pref_title_enable_barcode_size_check" />
-
         <androidx.preference.SeekBarPreference
             android:defaultValue="50"
             android:key="@string/pref_key_minimum_barcode_width"
@@ -47,6 +40,20 @@
             android:persistent="true"
             android:summary="@string/pref_summary_delay_loading_barcode_result"
             android:title="@string/pref_title_delay_loading_barcode_result" />
+
+        <androidx.preference.SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:key="@string/pref_key_enable_barcode_center_screen"
+            android:persistent="true"
+            android:summary="@string/pref_summary_enable_barcode_center_screen"
+            android:title="@string/pref_title_enable_barcode_center_screen" />
+
+        <androidx.preference.SwitchPreferenceCompat
+            android:defaultValue="false"
+            android:key="@string/pref_key_enable_barcode_size_check"
+            android:persistent="true"
+            android:summary="@string/pref_summary_enable_barcode_size_check"
+            android:title="@string/pref_title_enable_barcode_size_check" />
 
     </androidx.preference.PreferenceCategory>
 

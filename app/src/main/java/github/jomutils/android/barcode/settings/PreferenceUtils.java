@@ -34,7 +34,7 @@ public final class PreferenceUtils {
             float x = barcode.getBoundingBox() != null ? (float) barcode.getBoundingBox().width() : 0f;
             float barcodeWidth = overlay.translateX(x);
             float requiredWidth = reticleBoxWidth * getIntPref(context, R.string.pref_key_minimum_barcode_width, 50) / 100;
-            return coerceAtMost((float) (barcodeWidth / requiredWidth), 1f);
+            return coerceAtMost(barcodeWidth / requiredWidth, 1f);
         } else {
             return 1f;
         }
@@ -58,5 +58,9 @@ public final class PreferenceUtils {
 
     public static boolean shouldDelayLoadingBarcodeResult(Context context) {
         return getBooleanPref(context, R.string.pref_key_delay_loading_barcode_result, true);
+    }
+
+    public static boolean getCheckBarcodeInCenter(Context context) {
+        return getBooleanPref(context, R.string.pref_key_enable_barcode_center_screen, false);
     }
 }
