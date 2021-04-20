@@ -3,14 +3,16 @@ package github.jomutils.android.barcode.sample5;
 import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Rect;
 import android.graphics.RectF;
 import android.media.MediaPlayer;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.os.VibrationEffect;
 import android.os.Vibrator;
 import android.util.Log;
-import android.util.Size;
 
 import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
@@ -32,13 +34,17 @@ import github.jomutils.android.barcode.R;
 import github.jomutils.android.barcode.WorkflowState;
 import github.jomutils.android.barcode.camera.CameraReticleAnimator;
 import github.jomutils.android.barcode.camera.GraphicOverlay;
-import github.jomutils.android.barcode.sample4.ScanningViewModel;
 import github.jomutils.android.barcode.settings.PreferenceUtils;
+import github.jomutils.android.barcode.widget.BarcodeConfirmingGraphic;
 import github.jomutils.android.barcode.widget.BarcodeLoadingGraphic;
 import github.jomutils.android.barcode.widget.BarcodeReticleGraphic;
+import github.jomutils.android.barcode.widget.GoogleGraphicOverlay;
 
 import static github.jomutils.android.barcode.sample.Constants.EXTRA_BARCODE_FORMATS;
 
+/**
+ * See {@link BarcodeScanningXActivity} for example of using this class.
+ */
 public class BarcodeScannerX {
 
     public abstract static class ScannerCallback {
@@ -55,24 +61,32 @@ public class BarcodeScannerX {
     private static final String TAG = "BarcodeScannerUI";
 
     private final Context context;
-    private final ScanningViewModel viewModel;
+    private final BarcodeScannerXViewModel viewModel;
 
     private final PreviewView previewView;
     private final GraphicOverlay graphicOverlay;
 
+    private final Handler mainHandler;
+    private final CameraReticleAnimator cameraReticleAnimator;
+
     private Camera camera;
     private boolean isCameraLive = false;
-
-    private final CameraReticleAnimator cameraReticleAnimator;
 
     private ScannerCallback callback;
     private WorkflowCallback workflowCallback;
 
-    public BarcodeScannerX(ScanningViewModel viewModel, PreviewView previewView, GraphicOverlay graphicOverlay) {
+    /**
+     * What you should do after instantiate an object using this constructor:
+     * 1. invoke {@link #bindToLifecycle(LifecycleOwner)}
+     * 2. invoke {@link #checkPermission(Activity)}
+     */
+    public BarcodeScannerX(BarcodeScannerXViewModel viewModel, PreviewView previewView, GraphicOverlay graphicOverlay) {
         this.viewModel = viewModel;
         this.context = graphicOverlay.getContext();
         this.previewView = previewView;
         this.graphicOverlay = graphicOverlay;
+
+        mainHandler = new Handler(Looper.getMainLooper());
         // Setup Camera Preview Box
         cameraReticleAnimator = new CameraReticleAnimator(this.graphicOverlay);
     }
@@ -83,12 +97,14 @@ public class BarcodeScannerX {
     public BarcodeScannerX(AppCompatActivity activity, PreviewView previewView, GraphicOverlay graphicOverlay) {
         final int[] formats = activity.getIntent().getIntArrayExtra(EXTRA_BARCODE_FORMATS);
 
-        ScanningViewModel.Factory factory = new ScanningViewModel.Factory(activity.getApplication(), formats);
-        this.viewModel = new ViewModelProvider(activity, factory).get(ScanningViewModel.class);
+        BarcodeScannerXViewModel.Factory factory = new BarcodeScannerXViewModel.Factory(activity.getApplication(), formats);
+        this.viewModel = new ViewModelProvider(activity, factory).get(BarcodeScannerXViewModel.class);
 
         this.context = graphicOverlay.getContext();
         this.previewView = previewView;
         this.graphicOverlay = graphicOverlay;
+
+        mainHandler = new Handler(Looper.getMainLooper());
         // Setup Camera Preview Box
         cameraReticleAnimator = new CameraReticleAnimator(this.graphicOverlay);
 
@@ -108,12 +124,14 @@ public class BarcodeScannerX {
         final Bundle arguments = fragment.getArguments();
         final int[] formats = arguments != null ? arguments.getIntArray(EXTRA_BARCODE_FORMATS) : null;
 
-        ScanningViewModel.Factory factory = new ScanningViewModel.Factory(fragment.requireActivity().getApplication(), formats);
-        this.viewModel = new ViewModelProvider(fragment, factory).get(ScanningViewModel.class);
+        BarcodeScannerXViewModel.Factory factory = new BarcodeScannerXViewModel.Factory(fragment.requireActivity().getApplication(), formats);
+        this.viewModel = new ViewModelProvider(fragment, factory).get(BarcodeScannerXViewModel.class);
 
         this.context = graphicOverlay.getContext();
         this.previewView = previewView;
         this.graphicOverlay = graphicOverlay;
+
+        mainHandler = new Handler(Looper.getMainLooper());
         // Setup Camera Preview Box
         cameraReticleAnimator = new CameraReticleAnimator(this.graphicOverlay);
 
@@ -183,7 +201,7 @@ public class BarcodeScannerX {
     private void checkPermission(Activity activity) {
         if (!viewModel.allPermissionsGranted()) {
             ActivityCompat.requestPermissions(
-                    activity, ScanningViewModel.REQUIRED_PERMISSIONS.toArray(new String[0]), ScanningViewModel.REQUEST_CODE_PERMISSIONS);
+                    activity, BarcodeScannerXViewModel.REQUIRED_PERMISSIONS.toArray(new String[0]), BarcodeScannerXViewModel.REQUEST_CODE_PERMISSIONS);
         }
     }
 
@@ -196,20 +214,29 @@ public class BarcodeScannerX {
     private Camera startCamera(@NonNull ProcessCameraProvider cameraProvider, LifecycleOwner lifecycleOwner) {
         isCameraLive = true;
 
-        final Size size = getBarcodeReticleBoxSize();
+        if (graphicOverlay instanceof GoogleGraphicOverlay) {
+            GoogleGraphicOverlay overlay = (GoogleGraphicOverlay) graphicOverlay;
+            final RectF box = PreferenceUtils.getBarcodeReticleBox(overlay);
+            overlay.setImageSourceInfo(
+                    Math.round(box.width()),
+                    Math.round(box.height()),
+                    false);
+        }
 
         return viewModel.startCamera(
                 cameraProvider,
                 lifecycleOwner,
-                previewView,
-                size);
+                previewView);
     }
 
-    // TODO: 4/19/21 test this method
     public void unfreezeCamera(LifecycleOwner lifecycleOwner) {
-        isCameraLive = true;
-        Log.i(TAG, "unfreezeCamera: ");
         viewModel.unFreezeCamera(lifecycleOwner);
+        Log.i(TAG, "unfreezeCamera: ");
+
+        // Pending Image Analysis to let Preview finishes
+        mainHandler.postDelayed(() -> {
+            isCameraLive = true;
+        }, 500);
 
         if (this.callback != null) {
             this.callback.onCameraStart(camera);
@@ -219,13 +246,8 @@ public class BarcodeScannerX {
     @MainThread
     public void freezeCamera() {
         isCameraLive = false;
-        Log.i(TAG, "freezeCamera: ");
         viewModel.freezeCamera();
-    }
-
-    private Size getBarcodeReticleBoxSize() {
-        final RectF barcodeReticleBox = PreferenceUtils.getBarcodeReticleBox(graphicOverlay);
-        return new Size(Math.round(barcodeReticleBox.width()), Math.round(barcodeReticleBox.height()));
+        Log.i(TAG, "freezeCamera: ");
     }
 
     private void onCameraProcessing(@NonNull List<Barcode> barcodes) {
@@ -238,45 +260,43 @@ public class BarcodeScannerX {
 
         // Picks the barcode, if exists, that covers the center of graphic overlay.
         Barcode barcodeInCenter = null;
-//        for (Barcode barcode : barcodes) {
-//            final Rect boundingBox = barcode.getBoundingBox();
-//            if (boundingBox != null) {
-//                final RectF box = graphicOverlay.translateRect(boundingBox);
-//                final boolean contains = box.contains(graphicOverlay.getWidth() / 2f, graphicOverlay.getHeight() / 2f);
-//                if (contains) {
-//                    barcodeInCenter = barcode;
-//                    break;
-//                }
-//            }
-//        }
+        for (Barcode barcode : barcodes) {
+            final Rect boundingBox = barcode.getBoundingBox();
+            if (boundingBox != null) {
+                final RectF box = graphicOverlay.translateRect(boundingBox);
+                final boolean contains = box.contains(graphicOverlay.getWidth() / 2f, graphicOverlay.getHeight() / 2f);
+                if (contains) {
+                    barcodeInCenter = barcode;
+                    break;
+                }
+            }
+        }
 
         graphicOverlay.clear();
-        if (barcodes.isEmpty()) {
+        if (barcodeInCenter == null) {
             cameraReticleAnimator.start();
             graphicOverlay.add(new BarcodeReticleGraphic(graphicOverlay, cameraReticleAnimator));
             viewModel.setWorkflowState(WorkflowState.DETECTING);
         } else {
-            barcodeInCenter = barcodes.get(0);
-
             cameraReticleAnimator.cancel();
             Log.i(TAG, "onCameraProcessing: Got a barcodeCenter " + barcodeInCenter.getBoundingBox());
-//            float sizeProgress = PreferenceUtils.getProgressToMeetBarcodeSizeRequirement(graphicOverlay, barcodeInCenter);
-//            if (sizeProgress < 1) {
-            // Barcode in the camera view is too small, so prompt user to move camera closer.
-//                graphicOverlay.add(new BarcodeConfirmingGraphic(graphicOverlay, barcodeInCenter));
-//                viewModel.setWorkflowState(WorkflowState.CONFIRMING);
-//            } else {
-            // Barcode size in the camera view is sufficient.
-            if (PreferenceUtils.shouldDelayLoadingBarcodeResult(graphicOverlay.getContext())) {
-                ValueAnimator loadingAnimator = createLoadingAnimator(graphicOverlay, barcodeInCenter);
-                loadingAnimator.start();
-                graphicOverlay.add(new BarcodeLoadingGraphic(graphicOverlay, loadingAnimator));
-                viewModel.setWorkflowState(WorkflowState.PROCESSING);
+            float sizeProgress = PreferenceUtils.getProgressToMeetBarcodeSizeRequirement(graphicOverlay, barcodeInCenter);
+            if (sizeProgress < 1) {
+//             Barcode in the camera view is too small, so prompt user to move camera closer.
+                graphicOverlay.add(new BarcodeConfirmingGraphic(graphicOverlay, barcodeInCenter));
+                viewModel.setWorkflowState(WorkflowState.CONFIRMING);
             } else {
-                viewModel.setWorkflowState(WorkflowState.DETECTED);
-                viewModel.setDetectedBarcode(barcodeInCenter);
+//             Barcode size in the camera view is sufficient.
+                if (PreferenceUtils.shouldDelayLoadingBarcodeResult(graphicOverlay.getContext())) {
+                    ValueAnimator loadingAnimator = createLoadingAnimator(graphicOverlay, barcodeInCenter);
+                    loadingAnimator.start();
+                    graphicOverlay.add(new BarcodeLoadingGraphic(graphicOverlay, loadingAnimator));
+                    viewModel.setWorkflowState(WorkflowState.PROCESSING);
+                } else {
+                    viewModel.setWorkflowState(WorkflowState.DETECTED);
+                    viewModel.setDetectedBarcode(barcodeInCenter);
+                }
             }
-//            }
         }
         graphicOverlay.invalidate();
     }

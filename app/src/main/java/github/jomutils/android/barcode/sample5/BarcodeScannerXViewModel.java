@@ -1,11 +1,10 @@
-package github.jomutils.android.barcode.sample4;
+package github.jomutils.android.barcode.sample5;
 
 import android.Manifest;
 import android.app.Application;
 import android.content.pm.PackageManager;
 import android.util.DisplayMetrics;
 import android.util.Log;
-import android.util.Size;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -43,7 +42,7 @@ import github.jomutils.android.barcode.CameraHelper;
 import github.jomutils.android.barcode.ScopedExecutor;
 import github.jomutils.android.barcode.WorkflowState;
 
-public class ScanningViewModel extends AndroidViewModel {
+public class BarcodeScannerXViewModel extends AndroidViewModel {
 
     public static class Factory extends ViewModelProvider.NewInstanceFactory {
         private final Application application;
@@ -58,7 +57,7 @@ public class ScanningViewModel extends AndroidViewModel {
         @NonNull
         @Override
         public <T extends ViewModel> T create(@NonNull Class<T> modelClass) {
-            return (T) new ScanningViewModel(application, formats);
+            return (T) new BarcodeScannerXViewModel(application, formats);
         }
     }
 
@@ -88,7 +87,7 @@ public class ScanningViewModel extends AndroidViewModel {
     private final MutableLiveData<List<Barcode>> allBarcodesObservable = new MutableLiveData<>();
     private final MutableLiveData<BarcodeResult> detectedBarcode = new MutableLiveData<>();
 
-    public ScanningViewModel(@NonNull Application application, @Nullable int[] formats) {
+    public BarcodeScannerXViewModel(@NonNull Application application, @Nullable int[] formats) {
         super(application);
         analyzeExecutor = Executors.newSingleThreadExecutor();
 
@@ -167,7 +166,7 @@ public class ScanningViewModel extends AndroidViewModel {
         cameraProviderFuture.addListener(() -> {
             try {
                 final ProcessCameraProvider processCameraProvider = cameraProviderFuture.get();
-                ScanningViewModel.this.processCameraProvider.setValue(processCameraProvider);
+                BarcodeScannerXViewModel.this.processCameraProvider.setValue(processCameraProvider);
             } catch (ExecutionException | InterruptedException e) {
                 Log.e(TAG, "Error getting ProcessCameraProvider", e);
             }
@@ -176,8 +175,7 @@ public class ScanningViewModel extends AndroidViewModel {
 
     public Camera startCamera(ProcessCameraProvider processCameraProvider,
                               LifecycleOwner owner,
-                              PreviewView previewView,
-                              Size analyzeSize) {
+                              PreviewView previewView) {
         workflowState.setValue(WorkflowState.DETECTING);
 
         // Create a Preview
@@ -188,24 +186,29 @@ public class ScanningViewModel extends AndroidViewModel {
                 displayMetrics.widthPixels,
                 displayMetrics.heightPixels
         );
+
         final int rotation = previewView.getDisplay().getRotation();
 
         final ImageAnalysis imageAnalysis = new ImageAnalysis.Builder()
-                /*.setTargetAspectRatio(aspectRatio)*/
+                .setTargetAspectRatio(aspectRatio)
                 .setTargetRotation(rotation)
-                .setImageQueueDepth(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .setTargetResolution(analyzeSize)
+                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                /*.setTargetResolution(analyzeSize)*/
                 .build();
         imageAnalysis.setAnalyzer(analyzeExecutor, imageAnalyzer);
 
-        Preview.Builder previewBuilder = setupPreviewBuilder(previewView, aspectRatio, rotation);
+        Preview.Builder previewBuilder = new Preview.Builder()
+                .setTargetAspectRatio(aspectRatio)
+                .setTargetRotation(rotation);
 
 //        setBokehEffect(previewBuilder, cameraSelector);
 
         cameraPreview = previewBuilder.build();
         cameraPreview.setSurfaceProvider(previewView.getSurfaceProvider());
 
-        ImageCapture imageCapture = setupImageCapture();
+        ImageCapture imageCapture = new ImageCapture.Builder()
+                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                .build();
 
         return processCameraProvider.bindToLifecycle(
                 owner,
@@ -228,20 +231,6 @@ public class ScanningViewModel extends AndroidViewModel {
         if (value != null && !value.isBound(cameraPreview)) {
             value.bindToLifecycle(lifecycleOwner, cameraSelector, cameraPreview);
         }
-    }
-
-    private Preview.Builder setupPreviewBuilder(PreviewView previewView,
-                                                int aspectRatio,
-                                                int rotation) {
-        return new Preview.Builder()
-                .setTargetAspectRatio(aspectRatio)
-                .setTargetRotation(rotation);
-    }
-
-    private ImageCapture setupImageCapture() {
-        return new ImageCapture.Builder()
-                .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
-                .build();
     }
 
     public void setWorkflowState(WorkflowState state) {

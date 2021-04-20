@@ -26,7 +26,7 @@ public class BarcodeReticleGraphic extends BarcodeGraphicBase {
     public BarcodeReticleGraphic(GraphicOverlay overlay, CameraReticleAnimator animator) {
         super(overlay);
         this.animator = animator;
-        Resources resources = getOverlay().getResources();
+        Resources resources = overlay.getResources();
         ripplePaint = new Paint();
         ripplePaint.setStyle(Paint.Style.STROKE);
         ripplePaint.setColor(ContextCompat.getColor(getContext(), R.color.reticle_ripple));
