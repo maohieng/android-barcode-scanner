@@ -17,7 +17,6 @@ import androidx.camera.view.PreviewView;
 import androidx.fragment.app.Fragment;
 
 import com.google.android.material.chip.Chip;
-import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.mlkit.vision.barcode.Barcode;
 
 import github.jomutils.android.barcode.BarcodeResult;
@@ -64,7 +63,7 @@ public class BarcodeScanningXActivity extends AppCompatActivity {
     private AnimatorSet promptChipAnimator;
 
     private View flashButton;
-    private FloatingActionButton fab;
+//    private FloatingActionButton fab;
 
     BarcodeScannerX scannerUI;
 
@@ -91,8 +90,8 @@ public class BarcodeScanningXActivity extends AppCompatActivity {
         findViewById(R.id.settings_button).setOnClickListener(v -> {
             startActivity(new Intent(this, SettingsActivity.class));
         });
-        fab = findViewById(R.id.fab);
-        fab.setOnClickListener(v -> scannerUI.unfreezeCamera(BarcodeScanningXActivity.this));
+//        fab = findViewById(R.id.fab);
+//        fab.setOnClickListener(v -> scannerUI.unfreezeCamera(BarcodeScanningXActivity.this));
 
         previewView = findViewById(R.id.viewFinder);
         graphicOverlay = findViewById(R.id.graphicOverlay);
@@ -111,7 +110,7 @@ public class BarcodeScanningXActivity extends AppCompatActivity {
                     camera.getCameraControl().enableTorch(flashButton.isSelected());
                 }
 
-                fab.hide();
+//                fab.hide();
             }
 
             @Override
@@ -138,10 +137,6 @@ public class BarcodeScanningXActivity extends AppCompatActivity {
                     break;
                 case DETECTED:
                 case PROCEED:
-                    promptChip.setVisibility(View.VISIBLE);
-                    fab.show();
-                    break;
-                default:
                     promptChip.setVisibility(View.GONE);
                     break;
             }
@@ -166,11 +161,7 @@ public class BarcodeScanningXActivity extends AppCompatActivity {
         Intent data = new Intent();
         data.putExtra(EXTRA_BARCODE_RESULT, barcodeResult);
         setResult(RESULT_OK, data);
-        // TODO: 4/19/21 uncomment
-        //finish();
-
-        // TODO: 4/19/21 comment this
-        promptChip.setText(barcodeResult.displayValue);
+        finish();
     }
 
     ///////////////////////////////////////////////////////////////////////////

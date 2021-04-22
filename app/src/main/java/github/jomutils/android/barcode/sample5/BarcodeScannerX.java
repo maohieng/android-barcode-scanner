@@ -229,6 +229,7 @@ public class BarcodeScannerX {
                 previewView);
     }
 
+    @MainThread
     public void unfreezeCamera(LifecycleOwner lifecycleOwner) {
         viewModel.unFreezeCamera(lifecycleOwner);
         Log.i(TAG, "unfreezeCamera: ");
@@ -246,8 +247,8 @@ public class BarcodeScannerX {
     @MainThread
     public void freezeCamera() {
         isCameraLive = false;
-        viewModel.freezeCamera();
-        Log.i(TAG, "freezeCamera: ");
+        //viewModel.freezeCamera();
+        //Log.i(TAG, "freezeCamera: ");
     }
 
     private void onBarcodeProcessing(@NonNull List<Barcode> barcodes) {

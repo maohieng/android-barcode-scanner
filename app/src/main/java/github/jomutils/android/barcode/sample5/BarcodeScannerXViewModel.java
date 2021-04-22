@@ -219,13 +219,16 @@ public class BarcodeScannerXViewModel extends AndroidViewModel {
         );
     }
 
+    @Deprecated
     public void freezeCamera() {
         final ProcessCameraProvider value = processCameraProvider.getValue();
         if (value != null) {
+            // TODO: 4/21/21 This make some devices crash. Issue at https://issuetracker.google.com/issues/153891428
             value.unbind(cameraPreview);
         }
     }
 
+    @Deprecated
     public void unFreezeCamera(LifecycleOwner lifecycleOwner) {
         final ProcessCameraProvider value = processCameraProvider.getValue();
         if (value != null && !value.isBound(cameraPreview)) {
